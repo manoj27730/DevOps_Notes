@@ -1,0 +1,104 @@
+                                              Steps to add new SSH key to your GitHub account 
+-----------------------------------------------------------------------------------------------------------------------------
+Step 1- Open Terminal/Git Bash and run below command
+
+$ ssh-keygen -t ed25519 -C "your_email@example.com"
+
+Note: If you are using a legacy system that doesn't support the Ed25519 algorithm, use:
+
+$ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+When you're prompted to "Enter a file in which to save the key," press Enter.
+
+Step 2- At the prompt, type a secure passphrase.
+
+> Enter passphrase (empty for no passphrase): [Type a passphrase]
+> Enter same passphrase again: [Type passphrase again]
+
+Step 3- Start the ssh-agent in the background
+
+$ eval "$(ssh-agent -s)"
+> Agent pid 59566
+
+Step 4- Add your SSH private key to the ssh-agent and store your passphrase in the keychain.
+
+$ ssh-add -K ~/.ssh/id_ed25519
+
+Step 5- Copy the SSH public key to your clipboard.
+
+$ clip < ~/.ssh/id_ed25519.pub
+
+Open github account --> In the upper-right corner of any page, click your profile photo, then click Settings --> click SSH and GPG keys
+            --> Click New SSH key or Add SSH key --> Paste your key into the "Key" field --> Click Add SSH key
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Manoj_Sahu@ManojSahu-PC MINGW64 ~
+$ ssh-keygen -t ed25519 -C "manojsahu.cse@gmail.com"
+Generating public/private ed25519 key pair.
+Enter file in which to save the key (/c/Users/Manoj_Sahu/.ssh/id_ed25519):
+Created directory '/c/Users/Manoj_Sahu/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /c/Users/Manoj_Sahu/.ssh/id_ed25519.
+Your public key has been saved in /c/Users/Manoj_Sahu/.ssh/id_ed25519.pub.
+The key fingerprint is:
+SHA256:QrovEbPEHQIuKj3Zf+rqU500s2MItJF/tzYgUXoX6AY manojsahu.cse@gmail.com
+The key's randomart image is:
++--[ED25519 256]--+
+|  .. . ....      |
+| .  = E..  .     |
+|. .o *o=. .      |
+|.o oBo+.O..      |
+|o +.o=.BSB .     |
+|.  .ooo.* +      |
+|    .o...o .     |
+|    o. o         |
+|   .o=+          |
++----[SHA256]-----+
+
+Manoj_Sahu@ManojSahu-PC MINGW64 ~
+$
+
+Manoj_Sahu@ManojSahu-PC MINGW64 ~
+$ eval "$(ssh-agent -s)"
+Agent pid 6740
+
+Manoj_Sahu@ManojSahu-PC MINGW64 ~
+$ ssh-add ~/.ssh/id_ed25519
+Enter passphrase for /c/Users/Manoj_Sahu/.ssh/id_ed25519:
+Identity added: /c/Users/Manoj_Sahu/.ssh/id_ed25519 (/c/Users/Manoj_Sahu/.ssh/id_ed25519)
+
+Manoj_Sahu@ManojSahu-PC MINGW64 ~
+$
+
+-----------------------------------------------------------------------------------------------------------------------------
+                                                       Clone a repo first time
+
+
+Manoj_Sahu@ManojSahu-PC MINGW64 /d/New folder/Git
+$ git status
+fatal: Not a git repository (or any of the parent directories): .git
+
+Manoj_Sahu@ManojSahu-PC MINGW64 /d/New folder/Git
+$ git clone git@github.com:manoj27730/DemoGit.git
+Cloning into 'DemoGit'...
+The authenticity of host 'github.com (140.82.121.3)' can't be established.
+RSA key fingerprint is SHA256:nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'github.com,140.82.121.3' (RSA) to the list of known hosts.
+Enter passphrase for key '/c/Users/Manoj_Sahu/.ssh/id_ed25519':
+remote: Enumerating objects: 81, done.
+remote: Counting objects: 100% (41/41), done.
+remote: Compressing objects: 100% (33/33), done.
+delta 5), pack-reused 40
+Receiving objects: 100% (81/81), 13.27 KiB | 0 bytes/s, done.
+Resolving deltas: 100% (18/18), done.
+Checking connectivity... done.
+
+Manoj_Sahu@ManojSahu-PC MINGW64 /d/New folder/Git
+$
+
+Passphrase - bangalore
+
+

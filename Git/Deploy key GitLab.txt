@@ -1,0 +1,77 @@
+cat ~/.ssh/id_rsa.pub
+
+bitnami@ubuntu:~/.ssh$ cat ~/.ssh/id_rsa.pub
+cat: /home/bitnami/.ssh/id_rsa.pub: No such file or directory
+bitnami@ubuntu:~/.ssh$
+
+
+ssh-keygen -t rsa
+
+bitnami@ubuntu:~/.ssh$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/bitnami/.ssh/id_rsa):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/bitnami/.ssh/id_rsa.
+Your public key has been saved in /home/bitnami/.ssh/id_rsa.pub.
+The key fingerprint is:
+34:c0:db:e4:08:46:ce:8d:9f:39:a4:40:9b:de:e5:84 bitnami@ubuntu
+The key's randomart image is:
++--[ RSA 2048]----+
+|  .....          |
+| . =o+...        |
+|  +.E.=*o        |
+| . o Bo+o.       |
+|  . o * S        |
+|       .         |
+|                 |
+|                 |
+|                 |
++-----------------+
+bitnami@ubuntu:~/.ssh$
+
+bitnami@ubuntu:~/.ssh$ ls -l
+total 12
+-rw------- 1 bitnami bitnami 1766 Feb  7 03:25 id_rsa
+-rw-r--r-- 1 bitnami bitnami  396 Feb  7 03:25 id_rsa.pub
+-rw-r--r-- 1 bitnami bitnami  444 Sep 18  2020 known_hosts
+bitnami@ubuntu:~/.ssh$ pwd
+/home/bitnami/.ssh
+bitnami@ubuntu:~/.ssh$
+
+bitnami@ubuntu:~/.ssh$ eval $(ssh-agent -s)
+Agent pid 2682
+bitnami@ubuntu:~/.ssh$
+
+
+bitnami@ubuntu:~/.ssh$ ssh-add ~/.ssh/id_rsa
+Enter passphrase for /home/bitnami/.ssh/id_rsa:
+Identity added: /home/bitnami/.ssh/id_rsa (/home/bitnami/.ssh/id_rsa)
+bitnami@ubuntu:~/.ssh$
+
+bitnami@ubuntu:~/.ssh$ touch config
+bitnami@ubuntu:~/.ssh$ ls -l
+total 12
+-rw-rw-r-- 1 bitnami bitnami    0 Feb  7 03:31 config
+-rw------- 1 bitnami bitnami 1766 Feb  7 03:25 id_rsa
+-rw-r--r-- 1 bitnami bitnami  396 Feb  7 03:25 id_rsa.pub
+-rw-r--r-- 1 bitnami bitnami  444 Sep 18  2020 known_hosts
+bitnami@ubuntu:~/.ssh$
+
+bitnami@ubuntu:~/.ssh$ vi config
+bitnami@ubuntu:~/.ssh$ cat config
+# GitLab.com server
+Host gitlab.com
+RSAAuthentication yes
+IdentityFile ~/.ssh/id_rsa
+bitnami@ubuntu:~/.ssh$
+
+
+bitnami@ubuntu:~/.ssh$ cat ~/.ssh/id_rsa.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC+EX2MiQf8o14MTRq1nfXZDm3JKdwLiRrA3tjuaMyYYg3vEBNj/lBGZGx5fJCuDxPSzu06fedvaBSwQSq/9l7FAydnmeIKJaGzcUiJ+PeMFa6nnqpvACNWbURQOYLd+8u7NM4tVkhK8y6yPhTyBKJ9rJTZ1Ald1A9CySrqdSlLWNkzE9PUxoP2zftJ5ZIkCkTpukzvSk7kiqMGAEikgBzJRJP9+2wU0f1V2/LW2DhHoAXcmtxpYKeK3ABbUhTFF4F8ECHw0VYmXGPsIHdyJgw4NSIVNrevwU9UiknsrL5UZ5JuQrkxMpybEKHrI2LC7vBbKt+oZPKJrWXIeQrAOSvF bitnami@ubuntu
+bitnami@ubuntu:~/.ssh$
+
+
+
+
+
