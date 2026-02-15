@@ -1,0 +1,271 @@
+Classic Load Balancer
+
+-------------------------------------------------------
+resource "aws_elb" "elb" {
+  name               = "terraform-elb"
+  availability_zones = ["us-west-2a", "us-west-2b", "us-west-2c"]
+  listener {
+    instance_port     = 8000
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "HTTP:8000/"
+    interval            = 30
+  }
+  instances                   = [aws_instance.foo.id]
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
+  connection_draining_timeout = 400
+  tags = {
+    Name = "terraform-elb"
+  }
+}
+
+-----------------------------------------------------------------
+
+Create the VPC
+ resource "aws_vpc" "Main" {                # Creating VPC here
+   cidr_block       = var.main_vpc_cidr     # Defining the CIDR block use 10.0.0.0/24 for demo
+   instance_tenancy = "default"
+ }
+ Create Internet Gateway and attach it to VPC
+ resource "aws_internet_gateway" "IGW" {    # Creating Internet Gateway
+    vpc_id =  aws_vpc.Main.id               # vpc_id will be generated after we create VPC
+ }
+ Create a Public Subnets.
+ resource "aws_subnet" "publicsubnets" {    # Creating Public Subnets
+   vpc_id =  aws_vpc.Main.id
+   cidr_block = "${var.public_subnets}"        # CIDR block of public subnets
+ }
+ Create a Private Subnet                   # Creating Private Subnets
+ resource "aws_subnet" "privatesubnets" {
+   vpc_id =  aws_vpc.Main.id
+   cidr_block = "${var.private_subnets}"          # CIDR block of private subnets
+ }
+ Route table for Public Subnet's
+ resource "aws_route_table" "PublicRT" {    # Creating RT for Public Subnet
+    vpc_id =  aws_vpc.Main.id
+         route {
+    cidr_block = "0.0.0.0/0"               # Traffic from Public Subnet reaches Internet via Internet Gateway
+    gateway_id = aws_internet_gateway.IGW.id
+     }
+ }
+ Route table for Private Subnet's
+ resource "aws_route_table" "PrivateRT" {    # Creating RT for Private Subnet
+   vpc_id = aws_vpc.Main.id
+   route {
+   cidr_block = "0.0.0.0/0"             # Traffic from Private Subnet reaches Internet via NAT Gateway
+   nat_gateway_id = aws_nat_gateway.NATgw.id
+   }
+ }
+ Route table Association with Public Subnet's
+ resource "aws_route_table_association" "PublicRTassociation" {
+    subnet_id = aws_subnet.publicsubnets.id
+    route_table_id = aws_route_table.PublicRT.id
+ }
+ Route table Association with Private Subnet's
+ resource "aws_route_table_association" "PrivateRTassociation" {
+    subnet_id = aws_subnet.privatesubnets.id
+    route_table_id = aws_route_table.PrivateRT.id
+ }
+ resource "aws_eip" "nateIP" {
+   vpc   = true
+ }
+ Creating the NAT Gateway using subnet_id and allocation_id
+ resource "aws_nat_gateway" "NATgw" {
+   allocation_id = aws_eip.nateIP.id
+   subnet_id = aws_subnet.publicsubnets.id
+ }
+
+--------------------------------------------------------------------------------------------------
+
+Application Load Balancer
+
+[root@ip-172-31-45-89 manoj_terraform]# cat ALB.tf
+resource "aws_instance" "base" {
+ami = "ami-0a9d27a9f4f5c0efc"
+instance_type = "t2.micro"
+count = 2
+key_name = "test"
+vpc_security_group_ids = [aws_security_group.allow_ports.id]
+user_data = <<-EOT
+                #! /bin/bash
+                sudo su
+                yum update
+                yum install httpd -y
+                systemctl enable httpd
+                systemctl start httpd
+                echo "Hello from the EC2 instance $(hostname -f)" > /var/www/html/index.html
+EOT
+tags = {
+Name = "Target_Server{count.index}"
+   }
+ }
+
+#Create elastic IPs for each instance
+resource "aws_eip" "myeip" {
+  count = length(aws_instance.base)
+  vpc = true
+  instance = "${element(aws_instance.base.*.id,count.index)}"
+
+     tags = {
+      Name = "eip-Target_Server${count.index + 1}"
+   }
+ }
+
+resource "aws_default_vpc" "default" {
+   tags = {
+      Name = "Default VPC"
+    }
+  }
+
+# create security group for ALB
+resource "aws_security_group" "allow_ports" {
+  name         = "alb-group"
+  description  = "control inbound traffic to the application load balancer"
+  vpc_id       = "${aws_default_vpc.default.id}"
+
+  ingress {
+    description = "http from VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "TLS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "outbound traffic from VPC"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Control outbound traffic to the application load balancer"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+     Name = "allow_ports"
+    }
+  }
+
+data "aws_subnet_ids" "subnet" {
+   vpc_id = "${aws_default_vpc.default.id}"
+}
+
+#Create target groups for ALB
+resource "aws_alb_target_group" "my_target_group" {
+  health_check {
+    healthy_threshold   = "5"
+    interval            = "20"
+    protocol            = "HTTP"
+    matcher             = "200"
+    timeout             = "3"
+    path                = "/"
+    unhealthy_threshold = "2"
+  }
+    name = "my-test-tg"
+    port = 80
+    protocol = "HTTP"
+    target_type = "instance"
+    vpc_id = "${aws_default_vpc.default.id}"
+}
+
+#Create Application Load Balancer
+resource "aws_alb" "my_aws_alb" {
+  name               = "Manoj-ALB-Demo"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = ["${aws_security_group.allow_ports.id}"]
+  subnets            = data.aws_subnet_ids.subnet.ids
+  enable_deletion_protection = true
+  ip_address_type    = "ipv4"
+
+ tags = {
+    Name = "Manoj-ALB-Demo"
+    Environment = "Testing"
+   }
+ }
+
+#Configure listeners
+resource "aws_alb_listener" "my_alb_listener" {
+  load_balancer_arn = aws_alb.my_aws_alb.arn
+  port         = 80
+  protocol     = "HTTP"
+  default_action {
+    target_group_arn = "${aws_alb_target_group.my_target_group.arn}"
+    type             = "forward"
+  }
+}
+
+
+resource "aws_alb_target_group_attachment" "ec2_attach" {
+  count = length(aws_instance.base)
+  target_group_arn = aws_alb_target_group.my_target_group.arn
+  target_id = aws_instance.base[count.index].id
+ }
+
+
+[root@ip-172-31-45-89 manoj_terraform]#
+
+------------------------------------------------------------------------------------------
+
+[root@ip-172-31-45-89 manoj_terraform]# cat EC2.tf
+resource "aws_instance" "Demo_instance" {
+  ami           = "ami-06a0b4e3b7eb7a300"
+  instance_type = "t2.micro"
+  key_name      = "test"
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum install -y nginx",
+      "sudo systemctl start nginx"
+    ]
+    connection {
+      type        = "ssh"
+      user        = "ec2-user"
+      private_key = file("./test.pem")
+      host        = self.public_ip
+    }
+  }
+  tags = {
+    Name = "Demo_server"
+  }
+}
+
+-----------------------------------------------------
+
+[root@ip-172-31-45-89 manoj_terraform]# cat EC2.tf
+resource "aws_instance" "Demo_instance" {
+  ami           = "ami-06a0b4e3b7eb7a300"
+  instance_type = "t2.micro"
+  key_name      = "test"
+
+  provisioner "local-exec" {
+    command = "echo ${aws_instance.Demo_instance.private_ip} >> private_ip.txt"
+   }
+  tags = {
+    Name = "Demo_server"
+  }
+}
+
+[root@ip-172-31-45-89 manoj_terraform]# 

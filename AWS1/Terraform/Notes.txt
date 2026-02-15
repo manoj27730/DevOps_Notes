@@ -1,0 +1,4 @@
+Data sources allow data to be fetched or computed for use elsewhere in Terraform configuration. 
+The use of data sources allows a Terraform configuration to make use of information defined outside of Terraform.
+
+

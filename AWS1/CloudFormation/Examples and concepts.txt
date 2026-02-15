@@ -1,0 +1,447 @@
+Parameters
+
+Use the optional Parameters section to customize your templates. 
+Parameters enable you to input custom values to your template each time you create or update a stack.
+
+Parameters:
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+---------------------------------------------------------------------------------------------------------------------
+
+General requirements for parameters
+
+The following requirements apply when using parameters:
+
+You can have a maximum of 200 parameters in an AWS CloudFormation template.
+
+Each parameter must be given a logical name (also called logical ID), which must be alphanumeric and unique among all logical names within the template.
+
+Each parameter must be assigned a parameter type that is supported by AWS CloudFormation. For more information, see Type.
+
+Each parameter must be assigned a value at runtime for AWS CloudFormation to successfully provision the stack. 
+You can optionally specify a default value for AWS CloudFormation to use unless another value is provided.
+
+Parameters must be declared and referenced from within the same template. You can reference parameters from the Resources and Outputs sections of the template.
+
+-------------------------------------------------------------------------------------------------------------------
+Parameters: 
+  DBPort: 
+    Default: 3306
+    Description: TCP/IP port for the database
+    Type: Number
+    MinValue: 1150
+    MaxValue: 65535
+  DBPwd: 
+    NoEcho: true
+    Description: The database admin account password
+    Type: String
+    MinLength: 1
+    MaxLength: 41
+    AllowedPattern: ^[a-zA-Z0-9]*$
+------------------------------------------------------------------------------------------------------------------
+                                                     Conditions
+
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  EnvType:
+    Description: Environment type.
+    Default: test
+    Type: String
+    AllowedValues:
+      - prod
+      - test
+    ConstraintDescription: must specify prod or test.
+Conditions:
+  CreateProdResources: !Equals 
+    - !Ref EnvType
+    - prod
+Resources:
+  EC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: ami-0ff8a91507f77f867
+  MountPoint:
+    Type: 'AWS::EC2::VolumeAttachment'
+    Condition: CreateProdResources
+    Properties:
+      InstanceId: !Ref EC2Instance
+      VolumeId: !Ref NewVolume
+      Device: /dev/sdh
+  NewVolume:
+    Type: 'AWS::EC2::Volume'
+    Condition: CreateProdResources
+    Properties:
+      Size: 100
+      AvailabilityZone: !GetAtt 
+        - EC2Instance
+        - AvailabilityZone
+------------------------------------------------------------------------------------------------------------------
+                                            Intrinsic function reference
+
+Fn::Base64 - 
+
+The intrinsic function Fn::Base64 returns the Base64 representation of the input string. 
+This function is typically used to pass encoded data to Amazon EC2 instances by way of the UserData property.
+
+Syntax - !Base64 valueToEncode
+
+!Base64 !Sub string
+!Base64 !Ref logical_ID
+
+------------------------
+Fn::Cidr
+
+The intrinsic function Fn::Cidr returns an array of CIDR address blocks. 
+The number of CIDR blocks returned is dependent on the count parameter.
+
+Syntax - !Cidr [ ipBlock, count, cidrBits ]
+
+-----------------------
+Fn::FindInMap
+
+The intrinsic function Fn::FindInMap returns the value corresponding to keys in a two-level map that is declared in the Mappings section.
+
+Syntax - !FindInMap [ MapName, TopLevelKey, SecondLevelKey ]
+
+-----------------------
+Fn::GetAtt
+
+The Fn::GetAtt intrinsic function returns the value of an attribute from a resource in the template
+
+Syntax - !GetAtt logicalNameOfResource.attributeName
+
+!GetAtt myELB.DNSName
+
+----------------------
+Fn::GetAZs
+
+The intrinsic function Fn::GetAZs returns an array that lists Availability Zones for a specified region in alphabetical order. 
+Because customers have access to different Availability Zones, 
+the intrinsic function Fn::GetAZs enables template authors to write templates that adapt to the calling user's access.
+
+Syntax -- !GetAZs region
+
+Fn::GetAZs: ""
+Fn::GetAZs:
+  Ref: "AWS::Region"
+Fn::GetAZs: us-east-1
+
+---------------------
+Fn::ImportValue
+
+The intrinsic function Fn::ImportValue returns the value of an output exported by another stack.
+
+---------------------
+Fn::Join
+
+The intrinsic function Fn::Join appends a set of values into a single value, separated by the specified delimiter.
+
+---------------------
+Fn::Select
+
+The intrinsic function Fn::Select returns a single object from a list of objects by index.
+
+Syntax - !Select [ index, listOfObjects ]
+
+!Select [ "1", [ "apples", "grapes", "oranges", "mangoes" ] ]
+
+---------------------
+Ref
+
+The intrinsic function Ref returns the value of the specified parameter or resource.
+
+Syntax - Ref: logicalName
+         !Ref logicalName
+---------------------
+Fn::Sub
+
+The intrinsic function Fn::Sub substitutes variables in an input string with values that you specify. 
+----------------------------------------------------------
+
+
+"Parameters" : {
+  "InstanceTypeParameter" : {
+    "Type" : "String",
+    "Default" : "t2.micro",
+    "AllowedValues" : ["t2.micro", "m1.small", "m1.large"],
+    "Description" : "Enter t2.micro, m1.small, or m1.large. Default is t2.micro."
+  }
+}
+
+Parameters: 
+  InstanceTypeParameter: 
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - t2.micro
+      - m1.small
+      - m1.large
+    Description: Enter t2.micro, m1.small, or m1.large. Default is t2.micro.
+
+Resources:
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-063dd30adbb186909 # Amazon Linux AMI in N.California
+      Tags:
+        - Key: test
+          Value: My EC2 Instance
+        - Key: Type
+          Value: Worker Instance
+
+-----------------------------------------------
+Resources:
+  # First, a VPC:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value:  myVP
+-----------------------------------------------------------------------
+Q - Two Public Subnet with 64 IPS
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: myVPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: myVPC Internet Gateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+   PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      Ipv6CidrBlock: 2001:db8:2234:1a00::/64
+      AvailabilityZone: ap-south-1a
+      Tags:
+        - Key: Name
+          Value: Public Subnet 1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      Ipv6CidrBlock: 2001:db8:2235:1a00::/64
+      AvailabilityZone: ap-south-1a
+      Tags:
+        - Key: Name
+          Value: Public Subnet 2
+-------------------------------------------------------------------------
+
+Q - Two Private Subnet 64 Ips
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value: myVPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: myVPC Internet Gateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      Ipv6CidrBlock: 2001:db8:2234:1a00::/64
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Private Subnet 1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      Ipv6CidrBlock: 2001:db8:2234:1a00::/64
+      AvailabilityZone: !Select 
+        - '0'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Private Subnet 2
+
+
+------------------------------------------------------------------------------------------
+
+•	Q - Private Subnet have S3 VPC endpoint
+Description: 'Add VPC Endpoint to S3 from private subnets'
+Parameters:
+  VpcId:
+    Description: The VPC ID of the VPC that this endpoint will be attached to
+    Type: AWS::EC2::VPC::Id
+    AllowedPattern: "[a-z0-9-]*"
+  RouteTableId:
+    Description: The Routing Table ID of the Routing Table that this endpoint will be added to
+    Type: String
+    AllowedPattern: "[a-z0-9-]*"
+Resources:
+  S3Endpoint: 
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties: 
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+            - Effect: Allow
+              Principal: '*'
+              Action:
+                - 's3:GetObject'
+                - 's3:PutObject'
+                - 's3:DeleteObject'
+              Resource:
+                - 'arn:aws:s3:::aws-allow-ec2-vpc-endpoint/*'
+      RouteTableIds: 
+        - !Ref RouteTableId
+      ServiceName: !Join
+        - ''
+        - - com.amazonaws.
+          - !Ref 'AWS::Region'
+          - .s3
+      VpcId: !Ref VpcId
+Outputs:
+  StackName:
+    Description: 'Stack name'
+    Value: !Sub '${AWS::StackName}'
+  Endpoint:
+    Description: 'The VPC endpoint to S3.'
+    Value: !Ref S3Endpoint
+
+
+------------------------------------------------------------------------------------------
+
+•	Q - Allow only Ports 80,443,22 between private Subnet
+Resources:
+  #Create a VPC:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.1.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value:  !Join ['', [!Ref "AWS::StackName", "-VPC" ]]
+
+ALBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable SSH/HTTP/HTTPS access
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: !Ref ALBAccessCIDR
+        - IpProtocol: 'tcp'
+          FromPort: '443'
+          ToPort: '443'
+          CidrIp: !Ref ALBAccessCIDR
+        - IpProtocol: 'tcp'
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref ALBAccessCIDR
+      Tags:
+        - Key: Name
+          Value: SecurityGroup
+
+-------------------------------------------------------------------------------------------
+
+•	Q - Use the AMI and Create an Autoscaling group in Private subnet
+Resources: 
+  Type: AWS::AutoScaling::AutoScalingGroup
+  Properties: 
+    AvailabilityZones: 
+      Fn::GetAZs: ""
+    LaunchConfigurationName: 
+      Ref: "myLaunchConfig"
+    MinSize: "1"
+    MaxSize: "4"
+    LoadBalancerNames: 
+      - Ref: "myLoadBalancer"
+    MetricsCollection: 
+      - Granularity: "1Minute"
+        Metrics: 
+          - "GroupMinSize"
+          - "GroupMaxSize"
+    Tags:
+      - Key: Environment
+        Value: Production
+        PropagateAtLaunch: "true"
+      - Key: Purpose
+        Value: WebServerGroup
+        PropagateAtLaunch: "false"
+
+
+-----------------------------------------------------------------------------------------
+
+Q - Create Load balancer in Public Subnet
+
+MyLoadBalancer:
+  Type: AWS::ElasticLoadBalancing::LoadBalancer
+  Properties:
+    AvailabilityZones:
+    - "us-east-1a"
+    Instances:
+    - Ref: logical name of AWS::EC2::Instance resource 1
+    - Ref: logical name of AWS::EC2::Instance resource 2
+    Listeners:
+    - LoadBalancerPort: '80'
+      InstancePort: '80'
+      Protocol: HTTP
+    HealthCheck:
+      Target: HTTP:80/
+      HealthyThreshold: '3'
+      UnhealthyThreshold: '5'
+      Interval: '30'
+      Timeout: '5'
+
+
+
+
+
+
+
+
+
