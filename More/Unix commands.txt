@@ -1,0 +1,101 @@
+Delete files older than 30 days :-
+
+$ find <Path_To_Old_Files> -type f -mtime +30 | xargs rm -f
+
+$ find <Path_To_Old_Files> -mtime +30 -exec rm -f {} \;
+
+$ find <Path_To_Old_Files> -mtime +30 -delete;
+
+----------------------------------------------------------------------------------------
+
+What steps to add a user to a system without using useradd/adduser?
+
+1 - Add an entry for the user in /etc/passwd file.
+2 - Add an entry for the group in /etc/group file.
+3 - Create the home directory for the added user.
+4 - change the new user password using the passwd command.
+
+Shebang --> The #! syntax used in scripts to indicate an interpreter for execution under UNIX / Linux operating systems.
+----------------------------------------------------------------------------------------
+
+grep "Failed password" /var/log/auth.log | awk ‘{print $11}’ | uniq -c | sort -nr
+
+grep "Failed password" /var/log/auth.log
+
+egrep "Failed|Failure" /var/log/auth.log
+
+sudo find / -type f -size +100000k -exec ls -lh {} \; | awk '{ print $9 ": " $5 }'
+
+----------------------------------------------------------------------------------------
+
+To fix automatic putty connection 
+
+go to file --> /etc/ssh/sshd_config
+
+edit below entries
+
+content was:
+
+ClientAliveInterval 300  
+ClientAliveCountMax 0
+
+change to:
+
+ClientAliveInterval 6000  
+ClientAliveCountMax 3
+
+After change restart service --> service sshd restart
+
+-------------------------------------------------------------------------------------------------------------
+
+1. Install Java
+
+yum install java-1.8*
+
+2. Confirm java version
+
+java -version
+
+3. Install Jenkins:
+
+yum -y install wget
+wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+yum -y install jenkins
+
+4. Start and enable jenkins:
+
+# Start jenkins service
+systemctl start jenkins
+
+# Setup Jenkins to start at boot,
+systemctl enable jenkins
+
+5. We know that Jenkins is a web-based service which runs on port 8080. 
+So, we have to add one inbound rule for port 8080 so that Jenkins server will allow the request from my IP.
+
+--------------------------------------------------------------------------------------------------------------
+
+sudo yum list --installed | wc -l
+sudo yum list --all | wc -l
+sudo yum list --available | wc -l
+
+sudo yum list --installed | grep nginx
+
+------------------------------------------------------------------------------------------------
+
+apt-get install sysstat
+yum install sysstat
+
+mpstat -P ALL
+
+----------------------------------------------------------------------------------------------
+
+Changing the Hostname
+To change the hostname invoke the hostnamectl command with the set-hostname argument followed by the new hostname. 
+Only the root or a user with sudo privileges can change the system hostname.
+
+sudo hostnamectl set-hostname mail.linuxize.com
+
+The hostnamectl command does not produce output. On success, 0 is returned, a non-zero failure code otherwise.
+
